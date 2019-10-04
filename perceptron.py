@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class Perceptron:
     def __init__(self, bias):
         self.bias = bias
@@ -9,4 +10,3 @@ class Perceptron:
         if result > self.bias:
             return result
         return 0.0
-
