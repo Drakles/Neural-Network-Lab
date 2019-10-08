@@ -1,56 +1,68 @@
-from perceptron import Perceptron
-import numpy as np
 import random
-import collections
+
+import numpy as np
+
+from perceptronBipolar import PerceptronBipolar
+from perceptronUnipolar import PerceptronUnipolar
 
 
 def error_rate(current_output, expected_result):
     return expected_result - current_output
 
 
-def update_weigth(error, wages, input_signal, learning_rate):
+def update_weight(error, wages, input_signal, learning_rate):
     for i, wage in enumerate(wages):
         wages[i] = wage + learning_rate * error * input_signal[i]
 
 
-def learn(perceptron, input_signals, wages, expected_results, learning_rate):
-    for i, input_signal in enumerate(input_signals):
+def learn(perceptron, inputs, wages, learning_rate):
+    for input_expected_result_pair in inputs:
+        input_signal = input_expected_result_pair[0]
         current_output = perceptron.compute(input_signal, wages)
-        expected_result = expected_results[i]
-        error = error_rate(current_output, expected_result)
 
-        update_weigth(error, wages, input_signal, learning_rate)
+        error = error_rate(current_output, input_expected_result_pair[1])
+
+        update_weight(error, wages, input_signal, learning_rate)
 
 
 if __name__ == '__main__':
     theta = 0.5
-    learning_rate = 0.1
+    perceptrons = [PerceptronUnipolar(theta), PerceptronBipolar(theta)]
+    # input array with pair of input data as list and expected result from perceptron
+    inputs = np.array([[np.array([0, 0]), 0], [np.array([0, 1]), 1], [np.array([1, 0]), 1], [np.array([1, 1]), 1]])
 
-    perceptron = Perceptron(theta)
+    repeat_number = 100
+    range_random_wages = [1.0, 0.8, 0.5, 0.2, 0.1, 0.01]
+    learning_rates = [0.5, 0.25, 0.1, 0.01, 0.001]
 
-    input_signals = np.array([[0, 0], [0, 1], [1, 0], [1, 1]])
-    expected_results = np.array([0, 1, 1, 1])
+    for perceptron in perceptrons:
+        for learning_rate in learning_rates:
+            for range_random in range_random_wages:
+                epoch_sum = 0
 
-    # wages = np.array(random.randint(-1000, 1000) / 1000 for x in range(2))
-    wages = np.array([0.1, 0.1])
+                for n in range(repeat_number):
+                    wages = np.array([random.uniform(-range_random, range_random) for x in range(len(inputs[0][0]))])
 
-    epochs = 0
-    are_wages_changed = True
+                    epochs = 0
+                    are_wages_changed = True
 
-    while are_wages_changed:
-        old_wages = wages.copy()
-        print("old wages: " + str(old_wages))
-        learn(perceptron, input_signals, wages, expected_results, learning_rate)
-        print("new wages: " + str(wages))
-        if collections.Counter(old_wages) == collections.Counter(wages):
-            are_wages_changed = False
-        epochs += 1
+                    while are_wages_changed:
+                        old_wages = wages.copy()
+                        learn(perceptron, inputs, wages, learning_rate)
+                        epochs += 1
 
-    print("number of epochs needed: " + str(epochs))
-    print("wages:" + str(wages))
+                        if np.array_equal(old_wages, wages):
+                            are_wages_changed = False
 
-    for i, input_signal in enumerate(input_signals):
-        print("input:" + str(input_signal[0]) + "," + str(
-            input_signal[1]) + " expected result: " + str(
-            expected_results[i]) + " response from perceptron: " + str(
-            perceptron.compute(input_signal, wages)))
+                    epoch_sum += epochs
+
+                print(str(perceptron) + " wages range: " + str(-range_random) + "," + str(range_random) + " "
+                                                                                                          "learning_rate:  "
+                      + str(learning_rate) + " avg epoch number: " + str(epoch_sum / repeat_number))
+            print("\n")
+        print("\n")
+
+        # print("final wages:" + str(wages))
+        # for i, input_signal in enumerate(input_signals):
+        #     print("input:" + str(input_signal) + " expected result: " + str(
+        #         expected_results[i]) + " response from perceptron: " + str(perceptron.compute(input_signal, wages)))
