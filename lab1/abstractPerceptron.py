@@ -1,6 +1,6 @@
 class AbstractPerceptron:
-    def __init__(self, bias):
-        self.bias = bias
+    def __init__(self, theta):
+        self.theta = theta
 
     def compute(self, inputs, wages):
         raise NotImplementedError("The method not implemented")

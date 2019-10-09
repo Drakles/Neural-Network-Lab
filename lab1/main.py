@@ -2,15 +2,15 @@ import random
 
 import numpy as np
 
-from perceptronBipolar import PerceptronBipolar
-from perceptronUnipolar import PerceptronUnipolar
+from lab1.perceptronBipolar import PerceptronBipolar
+from lab1.perceptronUnipolar import PerceptronUnipolar
 
 
 def error_rate(current_output, expected_result):
     return expected_result - current_output
 
 
-def update_weight(error, wages, input_signal, learning_rate):
+def update_weights(error, wages, input_signal, learning_rate):
     for i, wage in enumerate(wages):
         wages[i] = wage + learning_rate * error * input_signal[i]
 
@@ -22,7 +22,7 @@ def learn(perceptron, inputs, wages, learning_rate):
 
         error = error_rate(current_output, input_expected_result_pair[1])
 
-        update_weight(error, wages, input_signal, learning_rate)
+        update_weights(error, wages, input_signal, learning_rate)
 
 
 if __name__ == '__main__':
