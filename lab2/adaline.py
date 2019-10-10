@@ -15,5 +15,8 @@ class Adaline:
     def update_bias(self, error, learning_rate):
         self.bias = self.bias + learning_rate * error
 
+    def total_stimulation(self, input_signal, wages):
+        return np.sum(np.append(input_signal * wages, self.bias))
+
     def __str__(self):
         return "Adaline"
