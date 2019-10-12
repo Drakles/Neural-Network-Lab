@@ -29,13 +29,15 @@ if __name__ == '__main__':
     theta = 0.5
     perceptrons = [PerceptronUnipolar(theta), PerceptronBipolar(theta)]
     # input array with pair of input data as list and expected result from perceptron
-    inputs = np.array([[np.array([0, 0]), 0], [np.array([0, 1]), 1], [np.array([1, 0]), 1], [np.array([1, 1]), 1]])
+    inputs_unipolar_bipolar = [
+        np.array([[np.array([0, 0]), 1], [np.array([0, 1]), 1], [np.array([1, 0]), 1], [np.array([1, 1]), 0]]),
+        np.array([[np.array([-1, -1]), 1], [np.array([-1, 1]), 1], [np.array([1, -1]), 1], [np.array([1, 1]), -1]])]
 
-    repeat_number = 100
-    range_random_wages = [1.0, 0.8, 0.5, 0.2, 0.1, 0.01]
-    learning_rates = [0.5, 0.25, 0.1, 0.01, 0.001]
+    repeat_number = 10
+    range_random_wages = [1.0, 0.8, 0.5, 0.2, 0.1]
+    learning_rates = [0.5, 0.25, 0.1, 0.01]
 
-    for perceptron in perceptrons:
+    for perceptron, inputs in zip(perceptrons, inputs_unipolar_bipolar):
         for learning_rate in learning_rates:
             for range_random in range_random_wages:
                 epoch_sum = 0
@@ -55,14 +57,13 @@ if __name__ == '__main__':
                             are_wages_changed = False
 
                     epoch_sum += epochs
+                    # print("final wages:" + str(wages))
+                    # for input_signal,expected_response in inputs:
+                    #     print("input:" + str(input_signal) + " expected result: " + str(expected_response) + " response from perceptron: " + str(
+                    #         perceptron.compute(input_signal, wages)))
 
                 print(str(perceptron) + " wages range: " + str(-range_random) + "," + str(range_random) + " "
                                                                                                           "learning_rate:  "
                       + str(learning_rate) + " avg epoch number: " + str(epoch_sum / repeat_number))
             print("\n")
         print("\n")
-
-        # print("final wages:" + str(wages))
-        # for i, input_signal in enumerate(input_signals):
-        #     print("input:" + str(input_signal) + " expected result: " + str(
-        #         expected_results[i]) + " response from perceptron: " + str(perceptron.compute(input_signal, wages)))
