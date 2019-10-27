@@ -20,7 +20,6 @@ def update_weights(error, wages, input_signal, learning_rate):
 def learn(adaline, inputs, wages, learning_rate):
     for input_expected_result_pair in inputs:
         input_signal = input_expected_result_pair[0]
-        # current_output = adaline.compute(input_signal, wages)
         total_stimulation = adaline.total_stimulation(input_signal, wages)
 
         error = error_rate(input_expected_result_pair[1], total_stimulation)
@@ -33,8 +32,8 @@ if __name__ == '__main__':
     theta = 0
 
     repeat_number = 100
-    range_random_wages = [1.0, 0.8, 0.5, 0.2, 0.1, 0.01]
-    learning_rates = [0.5, 0.25, 0.1, 0.01, 0.001]
+    range_random_wages = [1.0, 0.8, 0.5, 0.2, 0.1]
+    learning_rates = [0.5, 0.25, 0.1, 0.01]
 
     # input array with pair of input data as list and expected result from lab2
     inputs = np.array(
@@ -55,7 +54,7 @@ if __name__ == '__main__':
                 current_error = mean_square_error(current_output, expected_output)
                 next_error = current_error - 1
 
-                while next_error != 0.0 and epoch < 1000:
+                while next_error != 0.0 and epoch < 100:
                     learn(adaline, inputs, wages, learning_rate)
                     current_output = np.array([adaline.compute(input[0], wages) for input in inputs])
                     next_error = mean_square_error(current_output, expected_output)

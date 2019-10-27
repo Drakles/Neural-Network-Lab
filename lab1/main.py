@@ -30,10 +30,10 @@ if __name__ == '__main__':
     perceptrons = [PerceptronUnipolar(theta), PerceptronBipolar(theta)]
     # input array with pair of input data as list and expected result from perceptron
     inputs_unipolar_bipolar = [
-        np.array([[np.array([0, 0]), 1], [np.array([0, 1]), 1], [np.array([1, 0]), 1], [np.array([1, 1]), 0]]),
-        np.array([[np.array([-1, -1]), 1], [np.array([-1, 1]), 1], [np.array([1, -1]), 1], [np.array([1, 1]), -1]])]
+        np.array([[np.array([0, 0]), 0], [np.array([0, 1]), 1], [np.array([1, 0]), 1], [np.array([1, 1]), 1]]),
+        np.array([[np.array([-1, -1]), -1], [np.array([-1, 1]), 1], [np.array([1, -1]), 1], [np.array([1, 1]), 1]])]
 
-    repeat_number = 10
+    repeat_number = 100
     range_random_wages = [1.0, 0.8, 0.5, 0.2, 0.1]
     learning_rates = [0.5, 0.25, 0.1, 0.01]
 
