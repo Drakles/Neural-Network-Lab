@@ -13,14 +13,17 @@ def sigmoid_derivative(z):
     return sigmoid(z) * (1 - sigmoid(z))
 
 
-def plot_graph(train_result_per_epoch, test_result_per_epoch, epochs, batch_size, neurons_number):
-    plt.plot(epochs, train_result_per_epoch, label='training_data')
-    plt.plot(epochs, test_result_per_epoch, label='validation_data')
+def plot_graph(train_result_per_epoch, test_result_per_epoch, epochs, batch_size, neurons_number,weigth_min,
+               weigth_max):
+    plt.plot(epochs, train_result_per_epoch, label='validation data')
+    plt.plot(epochs, test_result_per_epoch, label='test data')
     plt.xlabel('number of epoch')
     plt.ylabel('accuracy in %')
     plt.legend()
-    plt.title('Batch size: ' + str(batch_size) + " number of neurons in hidden layer: " + str(neurons_number))
+    # plt.title('Batch size: ' + str(batch_size) + " ,number of neurons in hidden layer: " + str(neurons_number))
+    plt.title('number of neurons: ' + str(neurons_number))
 
+    plt.savefig("results/" + str(neurons_number) + ".png")
     plt.show()
 
 
@@ -38,16 +41,20 @@ def cost_derivative(activation, expected):
 
 
 class Network:
-    def __init__(self, size):
+    def __init__(self, size, min_weigth,max_weigth):
         self.size = size
         self.layers_number = len(size)
 
         self.biases = [np.random.randn(y, 1) for y in size[1:]]
 
+        self.min_weigth = min_weigth
+        self.max_weigth = max_weigth
+
         wages_y_dimensions = size[1:]
         wages_x_dimensions = size[:-1]
 
-        self.weights = [np.random.randn(y, x) for y, x in zip(wages_y_dimensions, wages_x_dimensions)]
+        self.weights = [np.random.uniform(low=min_weigth, high=max_weigth, size=(y, x)) for y, x in
+                        zip(wages_y_dimensions, wages_x_dimensions)]
 
     def feedforward(self, x):
         # start from input
@@ -170,7 +177,8 @@ class Network:
             test_result_per_epoch.append((self.evaluate(copy.deepcopy(test_data)) * 1.0) / test_data_length * 100.0)
             epoch_history.append(epoch_number)
 
-        plot_graph(train_result_per_epoch, test_result_per_epoch, epoch_history, mini_batch_size, self.size[1])
+        plot_graph(train_result_per_epoch, test_result_per_epoch, epoch_history, mini_batch_size, self.size[1],
+                   self.min_weigth,self.max_weigth)
 
     def __str__(self):
         return "Network: " + "size: " + str(self.size) + " layers number: " + str(self.layers_number)

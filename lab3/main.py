@@ -4,7 +4,7 @@ import pickle
 
 import numpy as np
 
-from lab3.Network import Network
+from lab3.network import Network
 
 
 def load_data():
@@ -37,14 +37,17 @@ if __name__ == '__main__':
     (training_set, validation_set, test_set, original_train_data) = load_data()
     data = (training_set, validation_set, test_set, original_train_data)
 
-    mini_batches_sizes = [1, 5, 10, 20, 50]
-    epoch_numbers = [15]
-    learning_rates = [0.01]
-    layers_configurations = [[28 * 28, 4, 10], [28 * 28, 16, 10], [28 * 28, 64, 10]]
+    mini_batches_sizes = [20]
+    epoch_numbers = [30]
+    learning_rate = 0.01
+    layers_configurations = [[28 * 28, 256, 10]]
+    weights_ranges = [[-0.1, 0.1]]
+    # weights_ranges = [[-0.25, 0.25], [-0.1, 0.1],[-0.5, 0.5], [-1, 1], [-10, 10]]
+    # layers_configurations = [[28 * 28, 4, 10], [28 * 28, 16, 10], [28 * 28, 64, 10]]
 
     repeat_number = 1
 
-    for learning_rate in learning_rates:
+    for weight_range in weights_ranges:
         for epochs in epoch_numbers:
             for mini_batch_size in mini_batches_sizes:
                 for layer_conf in layers_configurations:
@@ -52,8 +55,8 @@ if __name__ == '__main__':
                     for i in range(repeat_number):
                         (tr_set, val_set, tes_set, org_tr_set) = copy.deepcopy(data)
 
-                        network = Network(layer_conf)
-                        network.stochastic_gradient_descent(tr_set, epochs, mini_batch_size, learning_rate, tes_set,
+                        network = Network(layer_conf, weight_range[0], weight_range[1])
+                        network.stochastic_gradient_descent(tr_set, epochs, mini_batch_size, learning_rate, val_set,
                                                             org_tr_set)
 
                         # test_list = list(tes_set)
