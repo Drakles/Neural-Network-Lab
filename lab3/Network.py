@@ -1,13 +1,40 @@
+import copy
 import random
 import numpy as np
+import matplotlib.pyplot as plt
 
 
-def sigmoid(input):
-    return 1.0 / (1.0 + np.exp(-input))
+def sigmoid(signal):
+    return 1.0 / (1.0 + np.exp(-signal))
 
 
+# dericative of a cost function
 def sigmoid_derivative(z):
     return sigmoid(z) * (1 - sigmoid(z))
+
+
+def plot_graph(train_result_per_epoch, test_result_per_epoch, epochs, batch_size, neurons_number):
+    plt.plot(epochs, train_result_per_epoch, label='training_data')
+    plt.plot(epochs, test_result_per_epoch, label='validation_data')
+    plt.xlabel('number of epoch')
+    plt.ylabel('accuracy in %')
+    plt.legend()
+    plt.title('Batch size: ' + str(batch_size) + " number of neurons in hidden layer: " + str(neurons_number))
+
+    plt.show()
+
+
+def create_mini_batches(mini_batch_size, training_data, training_size):
+    # result = []
+    # for mini_batch_index in range(0, training_size, mini_batch_size):
+    #     result.append([training_data[mini_batch_index:mini_batch_index + mini_batch_size]])
+    #
+    # return result
+    return [training_data[i:i + mini_batch_size] for i in range(0, training_size, mini_batch_size)]
+
+
+def cost_derivative(activation, expected):
+    return activation - expected
 
 
 class Network:
@@ -32,7 +59,7 @@ class Network:
         return output
 
     # returns tuple of bias and weights updates, which represents gradient of cost function
-    def backprop(self, x, y):
+    def backpropagation(self, x, y):
         # lists of biases changes initialized with 0
         bias_updates = [np.zeros(b.shape) for b in self.biases]
 
@@ -63,7 +90,7 @@ class Network:
         # now backpropagate
 
         # calculate change -> calculate cost derivative for the last activation and last z
-        delta = self.cost_derivative(activations[-1], y) * sigmoid_derivative(z_list[-1])
+        delta = cost_derivative(activations[-1], y) * sigmoid_derivative(z_list[-1])
 
         # update the last biases and wages updates list starting from the last element - as we start from last layer
         bias_updates[-1] = delta
@@ -92,7 +119,7 @@ class Network:
         weights_updates = [np.zeros(w.shape) for w in self.weights]
 
         for input, expected_result in mini_batch:
-            delta_bias, delta_weigth = self.backprop(input, expected_result)
+            delta_bias, delta_weigth = self.backpropagation(input, expected_result)
 
             # update biases updates list
             biases_updates = [old_bias + bias_update for old_bias, bias_update in zip(biases_updates, delta_bias)]
@@ -118,36 +145,32 @@ class Network:
 
         return total_result
 
-    def stochastic_gradient_descent(self, training_data, epochs, mini_batch_size, learning_rate, test_data):
-        # to list
+    def stochastic_gradient_descent(self, training_data, epochs, mini_batch_size, learning_rate, test_data,
+                                    org_tr_data):
         training_data = list(training_data)
+
+        org_tr_data_length = len(list(copy.deepcopy(org_tr_data)))
+        test_data_length = len(list(copy.deepcopy(test_data)))
+
+        train_result_per_epoch = []
+        test_result_per_epoch = []
+        epoch_history = []
 
         for epoch_number in range(epochs):
             # randomly shuffle training data
             random.shuffle(training_data)
             # create mini batch with given size
-            mini_batches = self.create_mini_batches(mini_batch_size, training_data, len(training_data))
+            mini_batches = create_mini_batches(mini_batch_size, training_data, len(training_data))
 
             for mini_batch in mini_batches:
                 self.update_weights_biases(mini_batch, learning_rate)
 
-        if test_data:
-            test_data = list(test_data)
-            print("mini_batch_size: " + str(mini_batch_size))
-            print("epochs number: " + str(epochs))
-            print("learning rate: " + str(learning_rate))
+            train_result_per_epoch.append((self.evaluate(copy.deepcopy(org_tr_data)) * 1.0) / org_tr_data_length *
+                                          100.0)
+            test_result_per_epoch.append((self.evaluate(copy.deepcopy(test_data)) * 1.0) / test_data_length * 100.0)
+            epoch_history.append(epoch_number)
 
-    def create_mini_batches(self, mini_batch_size, training_data, training_size):
-        # result = []
-        # for mini_batch_index in range(0, training_size, mini_batch_size):
-        #     result.append([training_data[mini_batch_index:mini_batch_index + mini_batch_size]])
-        #
-        # return result
-        return [training_data[i:i + mini_batch_size] for i in range(0, training_size, mini_batch_size)]
-
-    # dericative of a cost function, we use here the mean square root cost
-    def cost_derivative(self, activation, expected):
-        return activation - expected
+        plot_graph(train_result_per_epoch, test_result_per_epoch, epoch_history, mini_batch_size, self.size[1])
 
     def __str__(self):
         return "Network: " + "size: " + str(self.size) + " layers number: " + str(self.layers_number)
