@@ -60,6 +60,9 @@ class Network:
         self.previous_weigth_updates = [np.zeros(shape=(y, x)) for y, x in
                                         zip(wages_y_dimensions, wages_x_dimensions)]
 
+        self.accumulated_squared_weight_updates = self.previous_weigth_updates
+        self.accumulated_squared_bias_updates = self.previous_biases_updates
+
     def feedforward(self, x):
         # start from input
         output = x
@@ -173,6 +176,41 @@ class Network:
         self.previous_biases_updates = biases_updates
         self.previous_weigth_updates = weights_updates
 
+    def update_weights_biases_with_adagrad(self, mini_batch, learning_rate, epsilon):
+        biases_updates = [np.zeros(b.shape) for b in self.biases]
+        weights_updates = [np.zeros(w.shape) for w in self.weights]
+
+        for input, expected_result in mini_batch:
+            delta_bias, delta_weigth = self.backpropagation(input, expected_result)
+
+            # update biases updates list
+            biases_updates = [old_bias + bias_update for old_bias, bias_update in zip(biases_updates, delta_bias)]
+
+            # update weight updates list
+            weights_updates = [old_weight + weight_update for old_weight, weight_update in
+                               zip(weights_updates, delta_weigth)]
+
+        # update current weight of network
+        corrected_w = []
+        for w, weigth_update, acc_G in zip(self.weights, weights_updates, self.accumulated_squared_weight_updates):
+            corrected_w.append(w - ((learning_rate * weigth_update) / np.sqrt(np.add(acc_G, epsilon))))
+
+        self.weights = corrected_w
+
+        # update current biases of network
+        corrected_b = []
+        for b, bias_update, acc_G in zip(
+                self.biases, biases_updates, self.accumulated_squared_bias_updates):
+            corrected_b.append(b - ((learning_rate * bias_update) / np.sqrt(np.add(acc_G, epsilon))))
+
+        self.biases = corrected_b
+
+        # update accumulated
+        self.accumulated_squared_weight_updates = np.add(self.accumulated_squared_weight_updates,
+                                                         (np.power(weights_updates, 2)))
+        self.accumulated_squared_bias_updates = np.add(self.accumulated_squared_bias_updates,
+                                                       np.power(biases_updates, 2))
+
     # return the result from test inputs for which the neural network outputs the correct result.
     def evaluate(self, test_data):
         # using argmax -> the highest value on given neuron is the response from neural net
@@ -203,7 +241,11 @@ class Network:
 
             for mini_batch in mini_batches:
                 # self.update_weights_biases(mini_batch, learning_rate)
-                self.update_weights_biases_with_momentum(mini_batch, learning_rate, 0.01)
+                # self.update_weights_biases_with_momentum(mini_batch, learning_rate, 0.001)
+                self.update_weights_biases_with_adagrad(mini_batch, learning_rate, 1e-4)
+            if test_data:
+                print("epoch: " + str(epoch_number) + " efficency:"
+                      + str((self.evaluate(copy.deepcopy(test_data)) / test_data_length) * 100.0))
 
             train_result_per_epoch.append((self.evaluate(copy.deepcopy(org_tr_data)) * 1.0) / org_tr_data_length *
                                           100.0)

@@ -4,7 +4,7 @@ import pickle
 
 import numpy as np
 
-from lab3.network import Network
+from lab4.network import Network
 
 
 def load_data():
@@ -40,7 +40,7 @@ if __name__ == '__main__':
     mini_batches_sizes = [20]
     epoch_numbers = [20]
     learning_rate = 0.01
-    layers_configurations = [[28 * 28, 64, 10]]
+    layers_configurations = [[28 * 28, 16, 10]]
     weights_ranges = [[-0.1, 0.1]]
 
     repeat_number = 1
