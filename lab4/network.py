@@ -35,12 +35,6 @@ def cost_derivative(activation, expected):
     return activation - expected
 
 
-def RMS(vector):
-    # Root mean square function
-    # (see paper for details)
-    return [(x + 1e-6) ** 0.5 for x in vector]
-
-
 class Network:
     def __init__(self, size, min_weigth, max_weigth):
         self.size = size
@@ -64,8 +58,11 @@ class Network:
         self.adagrad_accumulated_squared_weight_updates = self.momentum_previous_weigth_updates
         self.adagrad_accumulated_squared_bias_updates = self.momentum_previous_biases_updates
 
-        self.adadelta_last_delta_weight = self.momentum_previous_weigth_updates
-        self.adadelta_last_delta_bias = self.momentum_previous_biases_updates
+        self.adadelta_last_weight_E_delta_averages = self.momentum_previous_weigth_updates
+        self.adadelta_last_weight_E_g_averages = self.momentum_previous_weigth_updates
+
+        self.adadelta_last_bias_E_delta_averages = self.momentum_previous_biases_updates
+        self.adadelta_last_bias_E_g_averages = self.momentum_previous_biases_updates
 
     def feedforward(self, x):
         # start from input
@@ -216,7 +213,7 @@ class Network:
         self.adagrad_accumulated_squared_bias_updates = np.add(self.adagrad_accumulated_squared_bias_updates,
                                                                np.power(biases_updates, 2))
 
-    def update_weights_biases_with_adadelta(self, mini_batch, learning_rate):
+    def update_weights_biases_with_adadelta(self, mini_batch, y=0.9, epsilon=1e-4):
         biases_updates = [np.zeros(b.shape) for b in self.biases]
         weights_updates = [np.zeros(w.shape) for w in self.weights]
 
@@ -232,19 +229,54 @@ class Network:
 
         # update current weight of network
         corrected_weights = []
-        for w, weigth_update in zip(self.weights, weights_updates):
-            corrected_weights.append(w - learning_rate * weigth_update)
+        corrected_last_E_delta_averages = []
+        corrected_last_E_g_averages = []
+        for w, weight_update, last_E_delta, last_E_g in zip(self.weights, weights_updates,
+                                                            self.adadelta_last_weight_E_delta_averages,
+                                                            self.adadelta_last_weight_E_g_averages):
+            delta_weight = self.adadelta(corrected_last_E_delta_averages, corrected_last_E_g_averages, epsilon,
+                                         last_E_delta, last_E_g, weight_update, y)
+
+            corrected_weights.append(w - delta_weight)
 
         self.weights = corrected_weights
+        self.adadelta_last_weight_E_delta_averages = corrected_last_E_delta_averages
+        self.adadelta_last_weight_E_g_averages = corrected_last_E_g_averages
 
         # update current biases of network
         corrected_biases = []
-        for b, bias_update in zip(self.biases, biases_updates):
-            corrected_biases.append(b - learning_rate * bias_update)
+        corrected_last_E_delta_averages = []
+        corrected_last_E_g_averages = []
+        for b, bias_update, last_E_delta, last_E_g in zip(self.biases, biases_updates,
+                                                          self.adadelta_last_bias_E_delta_averages,
+                                                          self.adadelta_last_bias_E_g_averages):
+            delta_bias = self.adadelta(corrected_last_E_delta_averages, corrected_last_E_g_averages, epsilon,
+                                       last_E_delta, last_E_g, bias_update, y)
+
+            corrected_biases.append(b - delta_bias)
 
         self.biases = corrected_biases
+        self.adadelta_last_bias_E_delta_averages = corrected_last_E_delta_averages
+        self.adadelta_last_bias_E_g_averages = corrected_last_E_g_averages
 
-    # return the result from test inputs for which the neural network outputs the correct result.
+    def adadelta(self, corrected_last_E_delta_averages, corrected_last_E_g_averages, epsilon, last_E_delta, last_E_g,
+                 update, y):
+        e_delta = y * last_E_delta + (1 - y) * np.power(update, 2)
+
+        corrected_last_E_delta_averages.append(e_delta)
+
+        rms_last_delta = np.sqrt(np.add(e_delta, epsilon))
+
+        e_g = y * last_E_g + (1 - y) * np.power(update, 2)
+
+        corrected_last_E_g_averages.append(e_g)
+
+        rms_update = np.sqrt(np.add(e_g, epsilon))
+
+        delta_update = (rms_last_delta * update) / rms_update
+
+        return delta_update
+
     def evaluate(self, test_data):
         # using argmax -> the highest value on given neuron is the response from neural net
         test_results = [(np.argmax(self.feedforward(x)), y) for (x, y) in test_data]
@@ -275,7 +307,8 @@ class Network:
             for mini_batch in mini_batches:
                 # self.update_weights_biases(mini_batch, learning_rate)
                 # self.update_weights_biases_with_momentum(mini_batch, learning_rate, 0.001)
-                self.update_weights_biases_with_adagrad(mini_batch, learning_rate, 1e-4)
+                # self.update_weights_biases_with_adagrad(mini_batch, learning_rate, 1e-4)
+                self.update_weights_biases_with_adadelta(mini_batch, 0.9, 1e-4)
             if test_data:
                 print("epoch: " + str(epoch_number) + " efficency:"
                       + str((self.evaluate(copy.deepcopy(test_data)) / test_data_length) * 100.0))
