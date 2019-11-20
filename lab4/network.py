@@ -48,8 +48,17 @@ class Network:
         wages_y_dimensions = size[1:]
         wages_x_dimensions = size[:-1]
 
+
+        #first method initialize randomly from ranfe of min_weight to max_weight
         self.weights = [np.random.uniform(low=min_weigth, high=max_weigth, size=(y, x)) for y, x in
                         zip(wages_y_dimensions, wages_x_dimensions)]
+
+        #second method initialize using a Gaussian distribution with mean 0
+        #and standard deviation 1 over the square root of the number of
+        #weights connecting to the same neuron
+
+        # self.weights = [np.random.randn(y, x) / np.sqrt(x)
+        #                 for x, y in zip(self.sizes[:-1], self.sizes[1:])]
 
         self.momentum_previous_weigth_updates = [np.zeros(shape=(y, x)) for y, x in
                                                  zip(wages_y_dimensions, wages_x_dimensions)]
