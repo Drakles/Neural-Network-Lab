@@ -64,6 +64,12 @@ class Network:
         self.adadelta_last_bias_E_delta_averages = self.momentum_previous_biases_updates
         self.adadelta_last_bias_E_g_averages = self.momentum_previous_biases_updates
 
+        self.m_weight = self.momentum_previous_weigth_updates
+        self.v_weight = self.momentum_previous_weigth_updates
+
+        self.m_bias = self.momentum_previous_biases_updates
+        self.v_bias = self.momentum_previous_biases_updates
+
     def feedforward(self, x):
         # start from input
         output = x
@@ -277,6 +283,68 @@ class Network:
 
         return delta_update
 
+    def update_weights_biases_with_adam(self, mini_batch, learning_rate, t, epsilon):
+        biases_updates = [np.zeros(b.shape) for b in self.biases]
+        weights_updates = [np.zeros(w.shape) for w in self.weights]
+
+        for input, expected_result in mini_batch:
+            delta_bias, delta_weigth = self.backpropagation(input, expected_result)
+
+            # update biases updates list
+            biases_updates = [old_bias + bias_update for old_bias, bias_update in zip(biases_updates, delta_bias)]
+
+            # update weight updates list
+            weights_updates = [old_weight + weight_update for old_weight, weight_update in
+                               zip(weights_updates, delta_weigth)]
+
+        # g = compute_gradient(x, y)
+        # m = beta_1 * m + (1 - beta_1) * g
+        # v = beta_2 * v + (1 - beta_2) * np.power(g, 2)
+        # m_hat = m / (1 - np.power(beta_1, t))
+        # v_hat = v / (1 - np.power(beta_2, t))
+        # w = w - step_size * m_hat / (np.sqrt(v_hat) + epsilon)
+
+        beta_1 = 0.9
+        beta_2 = 0.999
+
+        # update current weight of network
+        weight_corrected = []
+        m_weight_corrected = []
+        v_weight_corrected = []
+        for w, weigth_update, m, v in zip(self.weights, weights_updates, self.m_weight, self.v_bias):
+            result, m_weight, v_weight = self.adam(beta_1, beta_2, epsilon, t, weigth_update, m, v)
+
+            m_weight_corrected.append(m_weight)
+            v_weight_corrected.append(v_weight)
+            weight_corrected.append(w - learning_rate * result)
+
+        self.weights = weight_corrected
+        self.m_weight = m_weight_corrected
+        self.v_weight = v_weight_corrected
+
+        # update current biases of network
+        corrected_biases = []
+        m_bias_corrected = []
+        v_bias_corrected = []
+        for b, bias_update, m, v in zip(self.biases, biases_updates, self.m_bias, self.v_bias):
+            result, m_bias, v_bias = self.adam(beta_1, beta_2, epsilon, t, bias_update, m, v)
+
+            corrected_biases.append(b - learning_rate * result)
+            m_bias_corrected.append(m_bias)
+            v_bias_corrected.append(v_bias)
+
+        self.biases = corrected_biases
+        self.m_bias = m_bias_corrected
+        self.v_bias = v_bias_corrected
+
+    def adam(self, beta_1, beta_2, epsilon, t, update, old_m, old_v):
+        m = beta_1 * old_m + (1 - beta_1) * update
+        v = beta_2 * old_v + (1 - beta_2) * np.power(update, 2)
+        m_hat = m / (1 - np.power(beta_1, t))
+        v_hat = v / (1 - np.power(beta_2, t))
+        result = m_hat / (np.sqrt(v_hat) + epsilon)
+        return result, m, v
+
     def evaluate(self, test_data):
         # using argmax -> the highest value on given neuron is the response from neural net
         test_results = [(np.argmax(self.feedforward(x)), y) for (x, y) in test_data]
@@ -304,11 +372,12 @@ class Network:
             # create mini batch with given size
             mini_batches = create_mini_batches(mini_batch_size, training_data, len(training_data))
 
-            for mini_batch in mini_batches:
+            for t, mini_batch in enumerate(mini_batches):
                 # self.update_weights_biases(mini_batch, learning_rate)
                 # self.update_weights_biases_with_momentum(mini_batch, learning_rate, 0.001)
                 # self.update_weights_biases_with_adagrad(mini_batch, learning_rate, 1e-4)
-                self.update_weights_biases_with_adadelta(mini_batch, 0.9, 1e-4)
+                # self.update_weights_biases_with_adadelta(mini_batch, 0.9, 1e-4)
+                self.update_weights_biases_with_adam(mini_batch, learning_rate, t+1, 1e-4)
             if test_data:
                 print("epoch: " + str(epoch_number) + " efficency:"
                       + str((self.evaluate(copy.deepcopy(test_data)) / test_data_length) * 100.0))
