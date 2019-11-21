@@ -21,9 +21,9 @@ def plot_graph(train_result_per_epoch, test_result_per_epoch, epochs, batch_size
     plt.ylabel('accuracy in %')
     plt.legend()
     # plt.title('Batch size: ' + str(batch_size) + " ,number of neurons in hidden layer: " + str(neurons_number))
-    plt.title('Momentum')
+    plt.title('Second method')
 
-    plt.savefig("results/{0} - momentum.png".format(str(neurons_number)))
+    plt.savefig("results/{0} - Second-method.png".format(str(neurons_number)))
     plt.show()
 
 
@@ -50,15 +50,15 @@ class Network:
 
 
         #first method initialize randomly from ranfe of min_weight to max_weight
-        self.weights = [np.random.uniform(low=min_weigth, high=max_weigth, size=(y, x)) for y, x in
-                        zip(wages_y_dimensions, wages_x_dimensions)]
+        # self.weights = [np.random.uniform(low=min_weigth, high=max_weigth, size=(y, x)) for y, x in
+        #                 zip(wages_y_dimensions, wages_x_dimensions)]
 
         #second method initialize using a Gaussian distribution with mean 0
         #and standard deviation 1 over the square root of the number of
         #weights connecting to the same neuron
 
-        # self.weights = [np.random.randn(y, x) / np.sqrt(x)
-        #                 for x, y in zip(self.sizes[:-1], self.sizes[1:])]
+        self.weights = [np.random.randn(y, x) / np.sqrt(x)
+                        for x, y in zip(self.size[:-1], self.size[1:])]
 
         self.momentum_previous_weigth_updates = [np.zeros(shape=(y, x)) for y, x in
                                                  zip(wages_y_dimensions, wages_x_dimensions)]
@@ -177,6 +177,8 @@ class Network:
             # update weight updates list
             weights_updates = [old_weight + weight_update for old_weight, weight_update in
                                zip(weights_updates, delta_weigth)]
+
+        #dodawanie do updateow z uwzl. learning rate -> całe wyrazenie
 
         # update current weigth of network
         self.weights = [w - learning_rate * weigth_update + (momentum_factor * previous_weigth) for w, weigth_update,
@@ -306,13 +308,6 @@ class Network:
             weights_updates = [old_weight + weight_update for old_weight, weight_update in
                                zip(weights_updates, delta_weigth)]
 
-        # g = compute_gradient(x, y)
-        # m = beta_1 * m + (1 - beta_1) * g
-        # v = beta_2 * v + (1 - beta_2) * np.power(g, 2)
-        # m_hat = m / (1 - np.power(beta_1, t))
-        # v_hat = v / (1 - np.power(beta_2, t))
-        # w = w - step_size * m_hat / (np.sqrt(v_hat) + epsilon)
-
         beta_1 = 0.9
         beta_2 = 0.999
 
@@ -382,11 +377,11 @@ class Network:
             mini_batches = create_mini_batches(mini_batch_size, training_data, len(training_data))
 
             for t, mini_batch in enumerate(mini_batches):
-                # self.update_weights_biases(mini_batch, learning_rate)
+                self.update_weights_biases(mini_batch, learning_rate)
                 # self.update_weights_biases_with_momentum(mini_batch, learning_rate, 0.001)
                 # self.update_weights_biases_with_adagrad(mini_batch, learning_rate, 1e-4)
                 # self.update_weights_biases_with_adadelta(mini_batch, 0.9, 1e-4)
-                self.update_weights_biases_with_adam(mini_batch, learning_rate, t+1, 1e-4)
+                # self.update_weights_biases_with_adam(mini_batch, learning_rate, t+1, 1e-4)
             if test_data:
                 print("epoch: " + str(epoch_number) + " efficency:"
                       + str((self.evaluate(copy.deepcopy(test_data)) / test_data_length) * 100.0))
